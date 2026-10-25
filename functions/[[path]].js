@@ -72,47 +72,48 @@ export async function onRequest(context) {
     // API 2: MEMBACA DAFTAR TABEL
     // GET /api/schema
     // ==========================================
-    if (path === "/api/schema") {
-      const result = await env.DB
-        .prepare(`
-          SELECT name
-          FROM sqlite_master
-          WHERE type = 'table'
-            AND name NOT LIKE 'sqlite_%'
-          ORDER BY name
-        `)
-        .all();
+if (path === "/api/schema") {
+  const result = await env.DB
+    .prepare(`
+      SELECT name
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+    `)
+    .all();
 
-      const tables = [];
+  const tables = [];
 
-      for (const row of result.results || []) {
-        const tableName = row.name;
+  for (const row of result.results || []) {
+    const tableName = row.name;
 
-        // Membaca struktur kolom tabel.
-        const columnsResult = await env.DB
-          .prepare("SELECT * FROM pragma_table_info(?)")
-          .bind(tableName)
-          .all();
+    // Nama tabel di-escape agar aman digunakan pada PRAGMA.
+    const safeName = tableName.replace(/"/g, '""');
 
-        tables.push({
-          table: tableName,
-          columns: (columnsResult.results || []).map(column => ({
-            name: column.name,
-            type: column.type,
-            notnull: column.notnull,
-            default_value: column.dflt_value,
-            primary_key: column.pk
-          }))
-        });
-      }
+    const columnsResult = await env.DB
+      .prepare(`PRAGMA table_info("${safeName}")`)
+      .all();
 
-      return json({
-        ok: true,
-        database_connected: true,
-        table_count: tables.length,
-        tables: tables
-      });
-    }
+    tables.push({
+      table: tableName,
+      columns: (columnsResult.results || []).map(column => ({
+        name: column.name,
+        type: column.type,
+        notnull: column.notnull,
+        default_value: column.dflt_value,
+        primary_key: column.pk
+      }))
+    });
+  }
+
+  return json({
+    ok: true,
+    database_connected: true,
+    table_count: tables.length,
+    tables
+  });
+}
 
     // ==========================================
     // API 3: ENDPOINT TIDAK DITEMUKAN

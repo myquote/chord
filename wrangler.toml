@@ -2,7 +2,8 @@ name = "chord-gitar-template"
 compatibility_date = "2026-10-25"
 pages_build_output_dir = "."
 
-[[d1_databases]]
-binding = "DB"
-database_name = "chord-gitar-db"
-database_id = "00000013-00000003-0000510f-62a55e3840207d02c05b36b3e95983b1"
+"d1_databases": [{
+    "binding": "DB",
+    "database_name": "chord-gitar-db",
+    "database_id": "7bf24b11-567a-470e-900c-224280c89fd7"
+ }]

@@ -1,0 +1,8 @@
+name = "chord-gitar-template"
+compatibility_date = "2026-10-25"
+pages_build_output_dir = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chord-gitar-db"
+database_id = "7bf24b11-567a-470e-900c-224280c89fd7"

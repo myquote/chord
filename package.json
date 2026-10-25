@@ -1,11 +1,10 @@
 {
-  "name": "chord-gitar-template",
-  "version": "1.0.0",
+  "name": "chord-gitar-connection-test",
+  "version": "1.0.2",
   "private": true,
-  "description": "Template Chord Gitar untuk Cloudflare Pages Functions + D1",
   "scripts": {
-    "dev": "wrangler pages dev public",
-    "deploy": "wrangler pages deploy public --project-name chordgitarr"
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy . --project-name chordgitarr"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

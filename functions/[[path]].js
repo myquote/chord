@@ -73,74 +73,42 @@ export async function onRequest(context) {
     // GET /api/schema
     // ==========================================
 if (path === "/api/schema") {
-  const checks = [];
+  const tables = ["artists", "songs"];
+  const schema = [];
 
-  // Tes 1: baca nama database
-  try {
-    const result = await env.DB
-      .prepare("PRAGMA database_list")
-      .all();
+  for (const table of tables) {
+    try {
+      const result = await env.DB
+        .prepare(
+          `SELECT * FROM pragma_table_info('${table}')`
+        )
+        .all();
 
-    checks.push({
-      test: "database_list",
-      ok: true,
-      result: result.results
-    });
-  } catch (error) {
-    checks.push({
-      test: "database_list",
-      ok: false,
-      error: error.message
-    });
-  }
-
-  // Tes 2: baca metadata tabel
-  try {
-    const result = await env.DB
-      .prepare(`
-        SELECT name
-        FROM sqlite_master
-        WHERE type = 'table'
-        ORDER BY name
-      `)
-      .all();
-
-    checks.push({
-      test: "sqlite_master",
-      ok: true,
-      tables: result.results
-    });
-  } catch (error) {
-    checks.push({
-      test: "sqlite_master",
-      ok: false,
-      error: error.message
-    });
-  }
-
-  // Tes 3: baca schema menggunakan table-valued PRAGMA
-  try {
-    const result = await env.DB
-      .prepare("SELECT name, type FROM pragma_table_list")
-      .all();
-
-    checks.push({
-      test: "pragma_table_list",
-      ok: true,
-      tables: result.results
-    });
-  } catch (error) {
-    checks.push({
-      test: "pragma_table_list",
-      ok: false,
-      error: error.message
-    });
+      schema.push({
+        table,
+        ok: true,
+        columns: result.results.map((column) => ({
+          name: column.name,
+          type: column.type,
+          notnull: column.notnull,
+          primary_key: column.pk
+        }))
+      });
+    } catch (error) {
+      schema.push({
+        table,
+        ok: false,
+        error: error instanceof Error
+          ? error.message
+          : String(error)
+      });
+    }
   }
 
   return json({
-    ok: checks.some(check => check.ok),
+    ok: true,
     database_connected: true,
-    diagnostic: checks
+    schema
   });
 }
     // ==========================================

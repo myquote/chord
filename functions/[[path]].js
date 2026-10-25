@@ -73,48 +73,76 @@ export async function onRequest(context) {
     // GET /api/schema
     // ==========================================
 if (path === "/api/schema") {
-  const result = await env.DB
-    .prepare(`
-      SELECT name
-      FROM sqlite_master
-      WHERE type = 'table'
-        AND name NOT LIKE 'sqlite_%'
-      ORDER BY name
-    `)
-    .all();
+  const checks = [];
 
-  const tables = [];
-
-  for (const row of result.results || []) {
-    const tableName = row.name;
-
-    // Nama tabel di-escape agar aman digunakan pada PRAGMA.
-    const safeName = tableName.replace(/"/g, '""');
-
-    const columnsResult = await env.DB
-      .prepare(`PRAGMA table_info("${safeName}")`)
+  // Tes 1: baca nama database
+  try {
+    const result = await env.DB
+      .prepare("PRAGMA database_list")
       .all();
 
-    tables.push({
-      table: tableName,
-      columns: (columnsResult.results || []).map(column => ({
-        name: column.name,
-        type: column.type,
-        notnull: column.notnull,
-        default_value: column.dflt_value,
-        primary_key: column.pk
-      }))
+    checks.push({
+      test: "database_list",
+      ok: true,
+      result: result.results
+    });
+  } catch (error) {
+    checks.push({
+      test: "database_list",
+      ok: false,
+      error: error.message
+    });
+  }
+
+  // Tes 2: baca metadata tabel
+  try {
+    const result = await env.DB
+      .prepare(`
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table'
+        ORDER BY name
+      `)
+      .all();
+
+    checks.push({
+      test: "sqlite_master",
+      ok: true,
+      tables: result.results
+    });
+  } catch (error) {
+    checks.push({
+      test: "sqlite_master",
+      ok: false,
+      error: error.message
+    });
+  }
+
+  // Tes 3: baca schema menggunakan table-valued PRAGMA
+  try {
+    const result = await env.DB
+      .prepare("SELECT name, type FROM pragma_table_list")
+      .all();
+
+    checks.push({
+      test: "pragma_table_list",
+      ok: true,
+      tables: result.results
+    });
+  } catch (error) {
+    checks.push({
+      test: "pragma_table_list",
+      ok: false,
+      error: error.message
     });
   }
 
   return json({
-    ok: true,
+    ok: checks.some(check => check.ok),
     database_connected: true,
-    table_count: tables.length,
-    tables
+    diagnostic: checks
   });
 }
-
     // ==========================================
     // API 3: ENDPOINT TIDAK DITEMUKAN
     // ==========================================
